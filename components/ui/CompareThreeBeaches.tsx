@@ -23,7 +23,7 @@ import {
     Home,
     Wifi,
 } from "lucide-react";
-import { ALL_BEACHES } from "@/data/beaches";
+import { useBeachesContext } from "@/context/BeachesContext";
 import type { BeachData } from "@/types/beach";
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -122,13 +122,15 @@ function BeachSelector({
     value,
     onChange,
     exclude,
+    allBeaches,
 }: {
-    value: BeachData;
+    value: BeachData | null;
     onChange: (beach: BeachData) => void;
     exclude: string[];
+    allBeaches: BeachData[];
 }) {
     const [open, setOpen] = useState(false);
-    const available = ALL_BEACHES.filter((beach) => !exclude.includes(beach.id));
+    const available = allBeaches.filter((beach) => !exclude.includes(beach.id));
 
     return (
         <div className="relative">
@@ -137,19 +139,25 @@ function BeachSelector({
                 onClick={() => setOpen((prev) => !prev)}
                 className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-blue-300 transition-all shadow-sm hover:shadow group"
             >
-                <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 border border-slate-100">
-                    <img src={value.image} alt={value.name} className="w-full h-full object-cover" />
-                </div>
+                {value ? (
+                    <>
+                        <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 border border-slate-100">
+                            <img src={value.image} alt={value.name} className="w-full h-full object-cover" />
+                        </div>
 
-                <div className="flex-1 text-left min-w-0">
-                    <p className="text-slate-800 font-black text-[12px] truncate">{value.name}</p>
-                    <div className="flex items-center gap-1 mt-0.5">
-                        <Star className="w-2.5 h-2.5 text-amber-400 fill-amber-400 flex-shrink-0" />
-                        <span className="text-slate-500 text-[10px]">
-                            {value.rating} · Kec. {value.kecamatan}
-                        </span>
-                    </div>
-                </div>
+                        <div className="flex-1 text-left min-w-0">
+                            <p className="text-slate-800 font-black text-[12px] truncate">{value.name}</p>
+                            <div className="flex items-center gap-1 mt-0.5">
+                                <Star className="w-2.5 h-2.5 text-amber-400 fill-amber-400 flex-shrink-0" />
+                                <span className="text-slate-500 text-[10px]">
+                                    {value.rating} · Kec. {value.kecamatan}
+                                </span>
+                            </div>
+                        </div>
+                    </>
+                ) : (
+                    <span className="flex-1 text-left text-slate-400 text-[12px]">Pilih pantai...</span>
+                )}
 
                 <ChevronDown
                     className={`w-3.5 h-3.5 text-slate-400 flex-shrink-0 transition-transform ${open ? "rotate-180" : ""
@@ -170,7 +178,7 @@ function BeachSelector({
                                         onChange(beach);
                                         setOpen(false);
                                     }}
-                                    className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left transition-colors hover:bg-blue-50 ${value.id === beach.id ? "bg-blue-50" : ""
+                                    className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left transition-colors hover:bg-blue-50 ${value?.id === beach.id ? "bg-blue-50" : ""
                                         }`}
                                 >
                                     <div className="w-7 h-7 rounded-md overflow-hidden flex-shrink-0">
@@ -185,7 +193,7 @@ function BeachSelector({
                                         </div>
                                     </div>
 
-                                    {value.id === beach.id && (
+                                    {value?.id === beach.id && (
                                         <Check className="w-3 h-3 text-blue-500 flex-shrink-0" />
                                     )}
                                 </button>
@@ -337,12 +345,36 @@ function Verdict({
    MAIN EXPORT
 ═══════════════════════════════════════════════════════════════════ */
 export function CompareThreeBeaches() {
-    const [beachA, setBeachA] = useState<BeachData>(ALL_BEACHES[0]);
-    const [beachB, setBeachB] = useState<BeachData>(ALL_BEACHES[1]);
-    const [beachC, setBeachC] = useState<BeachData>(ALL_BEACHES[2]);
+    const { beaches: allBeaches, loading } = useBeachesContext();
+    const [beachA, setBeachA] = useState<BeachData | null>(null);
+    const [beachB, setBeachB] = useState<BeachData | null>(null);
+    const [beachC, setBeachC] = useState<BeachData | null>(null);
 
     const sectionRef = useRef<HTMLElement | null>(null);
     const inView = useInView(sectionRef);
+
+    useEffect(() => {
+        if (allBeaches.length >= 3) {
+            if (!beachA) setBeachA(allBeaches[0]);
+            if (!beachB) setBeachB(allBeaches[1]);
+            if (!beachC) setBeachC(allBeaches[2]);
+        }
+    }, [allBeaches]);
+
+    if (loading || !beachA || !beachB || !beachC) {
+        return (
+            <section
+                id="bandingkan"
+                className="py-12 lg:py-16 flex items-center justify-center"
+                style={{ background: "#F8FAFF" }}
+            >
+                <div className="text-center">
+                    <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
+                    <p className="text-sm font-semibold text-slate-600">Memuat data pantai...</p>
+                </div>
+            </section>
+        );
+    }
 
     const beaches = [beachA, beachB, beachC] as [BeachData, BeachData, BeachData];
     const facilityKeys = Object.keys(beachA.fasilitas) as FacilityKey[];
@@ -462,6 +494,7 @@ export function CompareThreeBeaches() {
                                 value={selector.value}
                                 onChange={selector.onChange}
                                 exclude={selector.exclude}
+                                allBeaches={allBeaches}
                             />
                         </div>
                     ))}

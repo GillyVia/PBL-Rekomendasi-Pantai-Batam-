@@ -9,7 +9,7 @@ import { RecommendationPreview } from "@/components/ui/RecommendationPreview";
 import { MapPreview } from "@/components/ui/MapPreview";
 import { Footer } from "@/components/ui/Footer";
 import { CompareThreeBeaches } from "@/components/ui/CompareThreeBeaches";
-import ChatbotSection from "@/components/ui/ChatbotSection";
+import { ChatbotSection } from "@/components/ui/ChatbotSection";
 
 export default function HomePage() {
     return (

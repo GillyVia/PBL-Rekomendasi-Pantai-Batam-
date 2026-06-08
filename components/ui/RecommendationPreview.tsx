@@ -20,28 +20,54 @@ import {
     Users,
     Camera,
     Heart,
-    Sun,
+    Wifi,
     ChevronRight,
     Info,
     BarChart3,
+    Building2,
+    Umbrella,
+    Shield,
 } from "lucide-react";
+import { useBeachesContext } from "@/context/BeachesContext";
+import type { BeachData, BeachFacility } from "@/types/beach";
+
+type BeachResult = BeachData & { matchScore: number };
 
 const SUASANA_OPTIONS = [
-    { id: "santai", label: "Santai & Tenang", emoji: "😌", desc: "Ombak lembut, suasana damai", color: "blue" },
-    { id: "petualangan", label: "Petualangan", emoji: "🏄", desc: "Snorkeling, diving, seru", color: "cyan" },
-    { id: "romantis", label: "Romantis", emoji: "🌅", desc: "Sunset indah, suasana intim", color: "orange" },
-    { id: "keluarga", label: "Keluarga", emoji: "👨‍👩‍👧", desc: "Aman, cocok untuk anak", color: "emerald" },
-    { id: "fotografi", label: "Fotografi", emoji: "📸", desc: "Spot terbaik untuk konten", color: "amber" },
-    { id: "camping", label: "Berkemah", emoji: "🏕️", desc: "Alam terbuka, bintang malam", color: "purple" },
+    {
+        id: "rendah",
+        label: "Suasana Sederhana",
+        emoji: "🏖️",
+        desc: "Pantai alami, tenang, belum ramai",
+        color: "slate",
+    },
+    {
+        id: "cukup",
+        label: "Cukup Menarik",
+        emoji: "🌊",
+        desc: "Pemandangan bagus, nyaman dikunjungi",
+        color: "blue",
+    },
+    {
+        id: "tinggi",
+        label: "Sangat Menarik",
+        emoji: "🌟",
+        desc: "Panorama indah, pemandangan terbaik",
+        color: "amber",
+    },
 ] as const;
 
 const FASILITAS_OPTIONS = [
     { id: "toilet", label: "Toilet Bersih", icon: ShieldCheck },
+    { id: "mushola", label: "Mushola", icon: Building2 },
     { id: "warung", label: "Warung Makan", icon: Coffee },
-    { id: "parkir", label: "Area Parkir", icon: Car },
+    { id: "parkir", label: "Parkir Motor", icon: Car },
+    { id: "parkirMobil", label: "Parkir Mobil", icon: Car },
+    { id: "gazebo", label: "Gazebo", icon: Umbrella },
     { id: "sewa", label: "Sewa Alat", icon: Waves },
     { id: "penginapan", label: "Penginapan", icon: Tent },
-    { id: "wifi", label: "Area Bersih", icon: Sun },
+    { id: "wifi", label: "WiFi", icon: Wifi },
+    { id: "penjagaPantai", label: "Penjaga Pantai", icon: Shield },
 ] as const;
 
 const AKSES_OPTIONS = [
@@ -56,68 +82,16 @@ const POPULARITAS_OPTIONS = [
     { id: "tersembunyi", label: "Tersembunyi", desc: "Masih sepi, nuansa alami asli", icon: Camera, color: "emerald" },
 ] as const;
 
-const RESULTS = [
-    {
-        id: 1,
-        name: "Pantai Nongsa",
-        location: "Nongsa, Batam Utara",
-        match: 97,
-        rating: 4.9,
-        reviews: 1240,
-        price: "Gratis",
-        priceType: "free",
-        image:
-            "https://images.unsplash.com/photo-1683455306729-3fc630dea5b5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=600",
-        highlights: ["🏖️ Pasir Putih", "🚗 Akses Mudah", "⭐ Populer"],
-        reason:
-            "Suasana tenang dengan pasir putih lembut — cocok dengan preferensi santai dan akses mudah.",
-    },
-    {
-        id: 2,
-        name: "Pantai Lagoi",
-        location: "Batam",
-        match: 91,
-        rating: 4.7,
-        reviews: 650,
-        price: "Rp 50.000",
-        priceType: "paid",
-        image:
-            "https://images.unsplash.com/photo-1761744434194-215434982be2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=400",
-        highlights: ["🏨 Fasilitas Lengkap", "👨‍👩‍👧 Keluarga", "🍽️ Kuliner"],
-        reason: "Fasilitas premium dan cocok untuk keluarga maupun wisata santai.",
-    },
-    {
-        id: 3,
-        name: "Pantai Melur",
-        location: "Galang, Batam Selatan",
-        match: 85,
-        rating: 4.8,
-        reviews: 534,
-        price: "Rp 30.000",
-        priceType: "paid",
-        image:
-            "https://images.unsplash.com/photo-1744975768095-9847b8ea35c5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=400",
-        highlights: ["🤿 Snorkeling", "🐠 Terumbu Karang", "🌿 Alami"],
-        reason: "Sangat cocok untuk suasana petualangan dan kegiatan bawah laut.",
-    },
-];
-
 const SUASANA_ACTIVE: Record<string, string> = {
+    slate: "border-slate-400 bg-slate-50 shadow-slate-200/60",
     blue: "border-blue-500 bg-blue-50 shadow-blue-200/60",
-    cyan: "border-cyan-500 bg-cyan-50 shadow-cyan-200/60",
-    orange: "border-orange-400 bg-orange-50 shadow-orange-200/60",
-    emerald: "border-emerald-500 bg-emerald-50 shadow-emerald-200/60",
     amber: "border-amber-400 bg-amber-50 shadow-amber-200/60",
-    purple: "border-purple-500 bg-purple-50 shadow-purple-200/60",
 };
 
 const SUASANA_TEXT: Record<string, string> = {
+    slate: "text-slate-700",
     blue: "text-blue-700",
-    cyan: "text-cyan-700",
-    orange: "text-orange-700",
-    emerald: "text-emerald-700",
     amber: "text-amber-700",
-    purple: "text-purple-700",
 };
 
 const POPULARITAS_COLORS: Record<
@@ -140,6 +114,74 @@ const POPULARITAS_COLORS: Record<
         icon: "bg-emerald-100 text-emerald-600",
     },
 };
+
+const fasilitasMap: Record<string, keyof BeachFacility> = {
+    toilet: "toilet",
+    mushola: "mushola",
+    warung: "warungMakan",
+    parkir: "parkirMotor",
+    parkirMobil: "parkirMobil",
+    gazebo: "gazebo",
+    sewa: "sewaAlat",
+    penginapan: "penginapan",
+    wifi: "wifi",
+    penjagaPantai: "penjagaPantai",
+};
+
+function filterBeaches(
+    beaches: BeachData[],
+    prefs: {
+        suasana: string | null;
+        fasilitas: string[];
+        akses: string | null;
+        popularitas: string | null;
+    },
+): BeachResult[] {
+    return beaches
+        .map((beach) => {
+            let matched = 0;
+            let total = 0;
+
+            if (prefs.suasana) {
+                total++;
+                const suasanaScore = beach.rekomendasi?.suasanaScore ?? 1;
+                const targetScore: Record<string, number> = { rendah: 1, cukup: 2, tinggi: 3 };
+                if (suasanaScore === (targetScore[prefs.suasana] ?? 1)) matched++;
+            }
+
+            if (prefs.fasilitas.length > 0) {
+                prefs.fasilitas.forEach((f) => {
+                    total++;
+                    const key = fasilitasMap[f];
+                    if (key && beach.fasilitas[key]) matched++;
+                });
+            }
+
+            if (prefs.akses) {
+                total++;
+                const aksesScoreMap: Record<string, number> = { mudah: 3, sedang: 2, terpencil: 1 };
+                if ((beach.rekomendasi?.aksesScore ?? 2) === aksesScoreMap[prefs.akses]) matched++;
+            }
+
+            if (prefs.popularitas) {
+                total++;
+                const popMap: Record<string, number> = { viral: 3, sedang: 2, tersembunyi: 1 };
+                if (beach.rekomendasi?.popularitasScore === popMap[prefs.popularitas]) matched++;
+            }
+
+            const raw = total > 0 ? Math.round((matched / total) * 100) : 0;
+            const label = beach.rekomendasi?.labelJ48;
+            let matchScore = raw;
+            if (raw > 0) {
+                if (label === "sangat_direkomendasikan") matchScore = Math.min(100, raw + 15);
+                else if (label === "tidak_direkomendasikan") matchScore = Math.max(0, raw - 30);
+            }
+            return { ...beach, matchScore };
+        })
+        .filter((b) => b.matchScore > 0)
+        .sort((a, b) => b.matchScore - a.matchScore)
+        .slice(0, 5);
+}
 
 function StepLabel({
     num,
@@ -190,7 +232,7 @@ function MatchRing({ score }: { score: number }) {
     );
 }
 
-function FeaturedResultCard({ result }: { result: (typeof RESULTS)[0] }) {
+function FeaturedResultCard({ result }: { result: BeachResult }) {
     const [liked, setLiked] = useState(false);
 
     return (
@@ -221,11 +263,11 @@ function FeaturedResultCard({ result }: { result: (typeof RESULTS)[0] }) {
                         <p className="text-white font-black text-lg leading-tight">{result.name}</p>
                         <div className="flex items-center gap-1 mt-0.5">
                             <MapPin className="w-3 h-3 text-blue-300" />
-                            <span className="text-white/75 text-[11px]">{result.location}</span>
+                            <span className="text-white/75 text-[11px]">{result.kecamatan}</span>
                         </div>
                     </div>
                     <div className="flex flex-col items-center">
-                        <MatchRing score={result.match} />
+                        <MatchRing score={result.matchScore} />
                         <span className="text-white/60 text-[9px] mt-0.5 font-semibold">
                             Kecocokan
                         </span>
@@ -254,24 +296,24 @@ function FeaturedResultCard({ result }: { result: (typeof RESULTS)[0] }) {
                     </div>
 
                     <span
-                        className={`text-[11px] font-bold px-2.5 py-1 rounded-xl ${result.priceType === "free"
+                        className={`text-[11px] font-bold px-2.5 py-1 rounded-xl ${result.tiketMasukRp === 0
                                 ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
                                 : "bg-blue-50 text-blue-700 border border-blue-100"
                             }`}
                     >
-                        {result.price}
+                        {result.tiketMasuk}
                     </span>
                 </div>
 
                 <div className="flex items-start gap-2 bg-blue-50 rounded-2xl p-3 mb-3">
                     <Sparkles className="w-3.5 h-3.5 text-blue-500 flex-shrink-0 mt-0.5" />
                     <p className="text-blue-700 text-[12px] leading-relaxed font-medium">
-                        {result.reason}
+                        {result.deskripsiSingkat}
                     </p>
                 </div>
 
                 <div className="flex flex-wrap gap-1.5 mb-4">
-                    {result.highlights.map((item) => (
+                    {result.aktivitas.slice(0, 3).map((item) => (
                         <span
                             key={item}
                             className="text-[11px] font-semibold px-2.5 py-1 rounded-xl bg-amber-50 text-amber-700 border border-amber-100"
@@ -297,7 +339,7 @@ function CompactResultRow({
     result,
     rank,
 }: {
-    result: (typeof RESULTS)[number];
+    result: BeachResult;
     rank: number;
 }) {
     return (
@@ -325,20 +367,20 @@ function CompactResultRow({
                     </span>
                     <span className="text-slate-300 text-[10px]">·</span>
                     <span
-                        className={`text-[10px] font-semibold ${result.priceType === "free" ? "text-emerald-600" : "text-blue-600"
+                        className={`text-[10px] font-semibold ${result.tiketMasukRp === 0 ? "text-emerald-600" : "text-blue-600"
                             }`}
                     >
-                        {result.price}
+                        {result.tiketMasuk}
                     </span>
                 </div>
             </div>
 
             <div className="flex items-center gap-1.5 flex-shrink-0">
                 <span
-                    className={`text-[11px] font-black px-2 py-0.5 rounded-lg ${result.match >= 90 ? "bg-emerald-50 text-emerald-700" : "bg-blue-50 text-blue-700"
+                    className={`text-[11px] font-black px-2 py-0.5 rounded-lg ${result.matchScore >= 90 ? "bg-emerald-50 text-emerald-700" : "bg-blue-50 text-blue-700"
                         }`}
                 >
-                    {result.match}%
+                    {result.matchScore}%
                 </span>
                 <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-blue-400 transition-colors" />
             </div>
@@ -446,6 +488,8 @@ function EmptyState({ filled }: { filled: number }) {
 }
 
 export function RecommendationPreview() {
+    const { beaches } = useBeachesContext();
+
     const [suasana, setSuasana] = useState<string | null>(null);
     const [fasilitas, setFasilitas] = useState<string[]>([]);
     const [akses, setAkses] = useState<string | null>(null);
@@ -454,6 +498,7 @@ export function RecommendationPreview() {
     const [loading, setLoading] = useState(false);
     const [showResults, setShowResults] = useState(false);
     const [loadingDots, setLoadingDots] = useState(0);
+    const [results, setResults] = useState<BeachResult[]>([]);
 
     const filledCount = [!!suasana, fasilitas.length > 0, !!akses, !!popularitas].filter(Boolean).length;
     const canSubmit = filledCount >= 2;
@@ -480,9 +525,11 @@ export function RecommendationPreview() {
         setShowResults(false);
 
         setTimeout(() => {
+            const filtered = filterBeaches(beaches, { suasana, fasilitas, akses, popularitas });
+            setResults(filtered);
             setLoading(false);
             setShowResults(true);
-        }, 2000);
+        }, 600);
     };
 
     const handleReset = () => {
@@ -491,6 +538,7 @@ export function RecommendationPreview() {
         setFasilitas([]);
         setAkses(null);
         setPopularitas(null);
+        setResults([]);
     };
 
     return (
@@ -570,7 +618,7 @@ export function RecommendationPreview() {
                         <div className="p-6 space-y-7">
                             <div>
                                 <StepLabel num={1} label="Suasana yang kamu inginkan" filled={!!suasana} />
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                                <div className="grid grid-cols-3 gap-2.5">
                                     {SUASANA_OPTIONS.map((opt) => {
                                         const isActive = suasana === opt.id;
                                         return (
@@ -747,45 +795,60 @@ export function RecommendationPreview() {
                         {loading ? (
                             <LoadingSkeleton />
                         ) : showResults ? (
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between px-1">
-                                    <div>
-                                        <p className="text-slate-900 font-black">Hasil Rekomendasi</p>
-                                        <p className="text-slate-400 text-[11px] mt-0.5">
-                                            Ditemukan <span className="text-blue-600 font-bold">3 pantai</span> paling cocok
-                                        </p>
+                            results.length === 0 ? (
+                                <div className="bg-white rounded-3xl border border-slate-100 p-8 text-center shadow-sm">
+                                    <p className="text-slate-700 font-bold mb-1">Tidak ada pantai yang cocok</p>
+                                    <p className="text-slate-400 text-sm">
+                                        Coba ubah beberapa kriteria preferensimu.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between px-1">
+                                        <div>
+                                            <p className="text-slate-900 font-black">Hasil Rekomendasi</p>
+                                            <p className="text-slate-400 text-[11px] mt-0.5">
+                                                Ditemukan{" "}
+                                                <span className="text-blue-600 font-bold">{results.length} pantai</span>{" "}
+                                                paling cocok
+                                            </p>
+                                        </div>
+                                        <button
+                                            onClick={handleReset}
+                                            className="flex items-center gap-1.5 text-[11px] text-blue-600 font-bold hover:text-blue-800 transition-colors px-3 py-1.5 rounded-xl hover:bg-blue-50"
+                                        >
+                                            <RefreshCw className="w-3 h-3" />
+                                            Cari Ulang
+                                        </button>
                                     </div>
-                                    <button
-                                        onClick={handleReset}
-                                        className="flex items-center gap-1.5 text-[11px] text-blue-600 font-bold hover:text-blue-800 transition-colors px-3 py-1.5 rounded-xl hover:bg-blue-50"
+
+                                    <FeaturedResultCard result={results[0]} />
+
+                                    {results.length > 1 && (
+                                        <>
+                                            <div className="flex items-center gap-2 px-1">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                                                <span className="text-slate-400 text-[10px] uppercase tracking-[0.12em] font-bold">
+                                                    Rekomendasi Lainnya
+                                                </span>
+                                            </div>
+
+                                            {results.slice(1).map((r, i) => (
+                                                <CompactResultRow key={r.id} result={r} rank={i + 2} />
+                                            ))}
+                                        </>
+                                    )}
+
+                                    <a
+                                        href="#destinasi"
+                                        className="group w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border-2 border-blue-100 hover:border-blue-200 hover:bg-blue-50 text-blue-700 text-sm font-bold transition-all duration-200"
                                     >
-                                        <RefreshCw className="w-3 h-3" />
-                                        Cari Ulang
-                                    </button>
+                                        <Users className="w-4 h-4" />
+                                        Lihat Semua Rekomendasi
+                                        <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                                    </a>
                                 </div>
-
-                                <FeaturedResultCard result={RESULTS[0]} />
-
-                                <div className="flex items-center gap-2 px-1">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                                    <span className="text-slate-400 text-[10px] uppercase tracking-[0.12em] font-bold">
-                                        Rekomendasi Lainnya
-                                    </span>
-                                </div>
-
-                                {RESULTS.slice(1).map((r, i) => (
-                                    <CompactResultRow key={r.id} result={r} rank={i + 2} />
-                                ))}
-
-                                <a
-                                    href="#destinasi"
-                                    className="group w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border-2 border-blue-100 hover:border-blue-200 hover:bg-blue-50 text-blue-700 text-sm font-bold transition-all duration-200"
-                                >
-                                    <Users className="w-4 h-4" />
-                                    Lihat Semua Rekomendasi
-                                    <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                                </a>
-                            </div>
+                            )
                         ) : (
                             <EmptyState filled={filledCount} />
                         )}

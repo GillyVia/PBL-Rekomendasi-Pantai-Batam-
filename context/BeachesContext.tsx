@@ -3,10 +3,10 @@
 import {
   createContext,
   useContext,
-  useEffect,
-  useState,
+  useMemo,
   type ReactNode,
 } from "react";
+import { ALL_BEACHES } from "@/data/beaches";
 import type { BeachData } from "@/types/beach";
 
 type BeachesContextValue = {
@@ -21,36 +21,29 @@ type BeachesContextValue = {
 const BeachesContext = createContext<BeachesContextValue | null>(null);
 
 export function BeachesProvider({ children }: { children: ReactNode }) {
-  const [beaches, setBeaches] = useState<BeachData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const beaches = ALL_BEACHES;
+  const loading = false;
+  const error = null;
 
-  useEffect(() => {
-    fetch("/api/rekomendasi", { cache: "no-store" })
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.success && Array.isArray(json.data)) {
-          setBeaches(json.data);
-        } else {
-          setError(json.message ?? "Gagal mengambil data pantai.");
-        }
-      })
-      .catch(() => setError("Terjadi kesalahan saat mengambil data pantai."))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const beachesByDistrict = beaches.reduce<Record<string, BeachData[]>>(
-    (acc, beach) => {
-      const key = beach.kecamatan;
-      if (!acc[key]) acc[key] = [];
-      acc[key].push(beach);
-      return acc;
-    },
-    {},
+  const beachesByDistrict = useMemo(
+    () =>
+      beaches.reduce<Record<string, BeachData[]>>((acc, beach) => {
+        const key = beach.kecamatan;
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(beach);
+        return acc;
+      }, {}),
+    [beaches],
   );
 
-  const kecamatanList = Object.keys(beachesByDistrict);
-  const trendingBeaches = beaches.filter((b) => b.trending);
+  const kecamatanList = useMemo(
+    () => Object.keys(beachesByDistrict),
+    [beachesByDistrict],
+  );
+  const trendingBeaches = useMemo(
+    () => beaches.filter((beach) => beach.trending),
+    [beaches],
+  );
 
   return (
     <BeachesContext.Provider
