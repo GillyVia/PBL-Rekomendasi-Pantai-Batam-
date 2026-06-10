@@ -9,8 +9,36 @@ export async function GET() {
   try {
     const [rows] = await db.query(`
       SELECT
-        p.*,
-        k.nama AS kecamatan_nama,
+        p.id_pantai,
+        p.nama_pantai,
+        p.id_kecamatan,
+        p.kelurahan,
+        p.alamat,
+        p.foto_url,
+        p.image_gallery,
+        p.badge,
+        p.badge_color,
+        p.featured,
+        p.trending,
+        p.verified_date,
+        p.rating,
+        p.jumlah_ulasan,
+        p.tiket_masuk,
+        p.tiket_masuk_rp,
+        p.jarak_dari_kota,
+        p.jarak_label,
+        p.jam_buka,
+        p.akses_jalan,
+        p.highlight,
+        p.deskripsi_singkat,
+        p.deskripsi_lengkap,
+        p.aktivitas,
+        p.cocok_untuk,
+        p.tips_kunjungan,
+        p.google_maps_url,
+        p.latitude,
+        p.longitude,
+        k.nama_kecamatan,
         kr.suasana_score,
         kr.fasilitas_score,
         kr.akses_score,
@@ -18,37 +46,37 @@ export async function GET() {
         kr.rating_kategori,
         kr.harga_kategori,
         kr.jarak_kategori,
-        kr.label_database
+        kr.label_rekomendasi
       FROM pantai p
-      LEFT JOIN kecamatan k ON p.kecamatan_id = k.id
-      LEFT JOIN kategori_rekomendasi kr ON p.id = kr.pantai_id
+      LEFT JOIN kecamatan k ON p.id_kecamatan = k.id_kecamatan
+      LEFT JOIN kategori_rekomendasi kr ON p.id_pantai = kr.id_pantai
     `);
 
     const [fasRows] = await db.query(`
-      SELECT pf.pantai_id, f.nama
+      SELECT pf.id_pantai, f.nama_fasilitas
       FROM pantai_fasilitas pf
-      JOIN fasilitas f ON pf.fasilitas_id = f.id
+      JOIN fasilitas f ON pf.id_fasilitas = f.id_fasilitas
     `);
 
     const fasMap = new Map<string, Set<string>>();
-    for (const r of fasRows as Array<{ pantai_id: string; nama: string }>) {
-      if (!fasMap.has(r.pantai_id)) fasMap.set(r.pantai_id, new Set());
-      fasMap.get(r.pantai_id)!.add(r.nama);
+    for (const r of fasRows as Array<{ id_pantai: string; nama_fasilitas: string }>) {
+      if (!fasMap.has(r.id_pantai)) fasMap.set(r.id_pantai, new Set());
+      fasMap.get(r.id_pantai)!.add(r.nama_fasilitas.toLowerCase());
     }
 
     const data: BeachData[] = (rows as Record<string, unknown>[]).map((row) => {
-      const fas = fasMap.get(row.id as string) ?? new Set<string>();
+      const fas = fasMap.get(row.id_pantai as string) ?? new Set<string>();
       const fasilitas: BeachFacility = {
         toilet: fas.has("toilet"),
         mushola: fas.has("mushola"),
-        warungMakan: fas.has("warung_makan"),
-        parkirMotor: fas.has("parkir_motor"),
-        parkirMobil: fas.has("parkir_mobil"),
+        warungMakan: fas.has("warung_makan") || fas.has("warung makan"),
+        parkirMotor: fas.has("parkir_motor") || fas.has("parkir motor"),
+        parkirMobil: fas.has("parkir_mobil") || fas.has("parkir mobil"),
         gazebo: fas.has("gazebo"),
-        sewaAlat: fas.has("sewa_alat"),
+        sewaAlat: fas.has("sewa_alat") || fas.has("sewa alat"),
         penginapan: fas.has("penginapan"),
         wifi: fas.has("wifi"),
-        penjagaPantai: fas.has("penjaga_pantai"),
+        penjagaPantai: fas.has("penjaga_pantai") || fas.has("penjaga pantai"),
       };
 
       const suasana_score = Number(row.suasana_score) || 3;
@@ -64,12 +92,12 @@ export async function GET() {
       });
 
       return {
-        id: String(row.id),
-        name: String(row.nama ?? ""),
-        kecamatan: String(row.kecamatan_nama ?? row.kecamatan_id ?? ""),
+        id: String(row.id_pantai),
+        name: String(row.nama_pantai ?? ""),
+        kecamatan: String(row.nama_kecamatan ?? ""),
         kelurahan: String(row.kelurahan ?? ""),
-        alamatLengkap: String(row.alamat_lengkap ?? ""),
-        image: String(row.image ?? ""),
+        alamatLengkap: String(row.alamat ?? ""),
+        image: String(row.foto_url ?? ""),
         imageGallery: row.image_gallery
           ? (JSON.parse(row.image_gallery as string) as string[])
           : [],
@@ -79,7 +107,7 @@ export async function GET() {
         trending: Boolean(row.trending),
         verifiedDate: row.verified_date ? String(row.verified_date) : undefined,
         rating: Number(row.rating) || 0,
-        reviews: Number(row.reviews) || 0,
+        reviews: Number(row.jumlah_ulasan) || 0,
         tiketMasuk: String(row.tiket_masuk ?? ""),
         tiketMasukRp: Number(row.tiket_masuk_rp) || 0,
         jarakDariKota: Number(row.jarak_dari_kota) || 0,
@@ -89,9 +117,7 @@ export async function GET() {
         highlight: String(row.highlight ?? ""),
         deskripsiSingkat: String(row.deskripsi_singkat ?? ""),
         deskripsiLengkap: String(row.deskripsi_lengkap ?? ""),
-        kelebihanUtama: row.kelebihan_utama
-          ? (JSON.parse(row.kelebihan_utama as string) as string[])
-          : [],
+        kelebihanUtama: [],
         aktivitas: row.aktivitas
           ? (JSON.parse(row.aktivitas as string) as string[])
           : [],
@@ -103,10 +129,12 @@ export async function GET() {
           : [],
         googleMapsUrl: String(row.google_maps_url ?? ""),
         koordinat: {
-          lat: Number(row.koordinat_lat) || 0,
-          lng: Number(row.koordinat_lng) || 0,
+          lat: Number(row.latitude) || 0,
+          lng: Number(row.longitude) || 0,
         },
-        kategori: [],
+        kategori: row.kategori_pantai
+          ? (JSON.parse(row.kategori_pantai as string) as string[])
+          : [],
         fasilitas,
         rekomendasi: {
           suasanaScore: suasana_score,
@@ -116,7 +144,7 @@ export async function GET() {
           ratingKategori: row.rating_kategori as string | null,
           hargaKategori: row.harga_kategori as string | null,
           jarakKategori: row.jarak_kategori as string | null,
-          labelDatabase: row.label_database as string | null,
+          labelDatabase: row.label_rekomendasi as string | null,
           labelJ48,
         },
       };

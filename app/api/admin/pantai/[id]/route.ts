@@ -28,18 +28,19 @@ export async function PATCH(
     const payload = (await request.json()) as Partial<BeachData>;
     await conn.beginTransaction();
 
+    // Map JS field name → DB column name
     const fieldMap: Record<string, string> = {
-      name: "nama",
+      name: "nama_pantai",
       kelurahan: "kelurahan",
-      alamatLengkap: "alamat_lengkap",
-      image: "image",
+      alamatLengkap: "alamat",
+      image: "foto_url",
       imageGallery: "image_gallery",
       badge: "badge",
       badgeColor: "badge_color",
       featured: "featured",
       trending: "trending",
       rating: "rating",
-      reviews: "reviews",
+      reviews: "jumlah_ulasan",
       tiketMasuk: "tiket_masuk",
       tiketMasukRp: "tiket_masuk_rp",
       jarakDariKota: "jarak_dari_kota",
@@ -49,12 +50,19 @@ export async function PATCH(
       highlight: "highlight",
       deskripsiSingkat: "deskripsi_singkat",
       deskripsiLengkap: "deskripsi_lengkap",
-      kelebihanUtama: "kelebihan_utama",
       aktivitas: "aktivitas",
       cocokUntuk: "cocok_untuk",
       tipsKunjungan: "tips_kunjungan",
       googleMapsUrl: "google_maps_url",
     };
+
+    const jsonArrayFields = new Set([
+      "imageGallery",
+      "aktivitas",
+      "cocokUntuk",
+      "tipsKunjungan",
+    ]);
+    const boolFields = new Set(["featured", "trending"]);
 
     const setClauses: string[] = [];
     const values: unknown[] = [];
@@ -62,61 +70,53 @@ export async function PATCH(
     for (const [jsKey, dbCol] of Object.entries(fieldMap)) {
       if (!(jsKey in payload)) continue;
       const val = payload[jsKey as keyof BeachData];
-      if (
-        jsKey === "imageGallery" ||
-        jsKey === "kelebihanUtama" ||
-        jsKey === "aktivitas" ||
-        jsKey === "cocokUntuk" ||
-        jsKey === "tipsKunjungan"
-      ) {
-        setClauses.push(`${dbCol} = ?`);
+      setClauses.push(`${dbCol} = ?`);
+      if (jsonArrayFields.has(jsKey)) {
         values.push(JSON.stringify(val));
-      } else if (jsKey === "featured" || jsKey === "trending") {
-        setClauses.push(`${dbCol} = ?`);
+      } else if (boolFields.has(jsKey)) {
         values.push(val ? 1 : 0);
       } else {
-        setClauses.push(`${dbCol} = ?`);
         values.push(val);
       }
     }
 
     if ("koordinat" in payload && payload.koordinat) {
-      setClauses.push("koordinat_lat = ?", "koordinat_lng = ?");
+      setClauses.push("latitude = ?", "longitude = ?");
       values.push(payload.koordinat.lat, payload.koordinat.lng);
     }
 
     if ("kecamatan" in payload && payload.kecamatan) {
-      let kecamatanId: number;
       const [existing] = await conn.query(
-        "SELECT id FROM kecamatan WHERE nama = ? LIMIT 1",
+        "SELECT id_kecamatan FROM kecamatan WHERE nama_kecamatan = ? LIMIT 1",
         [payload.kecamatan],
       );
-      const ekList = existing as Array<{ id: number }>;
+      const ekList = existing as Array<{ id_kecamatan: number }>;
+      let kecamatanId: number;
       if (ekList.length > 0) {
-        kecamatanId = ekList[0].id;
+        kecamatanId = ekList[0].id_kecamatan;
       } else {
         const [res] = await conn.query(
-          "INSERT INTO kecamatan (nama) VALUES (?)",
+          "INSERT INTO kecamatan (nama_kecamatan) VALUES (?)",
           [payload.kecamatan],
         );
         kecamatanId = (res as { insertId: number }).insertId;
       }
-      setClauses.push("kecamatan_id = ?");
+      setClauses.push("id_kecamatan = ?");
       values.push(kecamatanId);
     }
 
     if (setClauses.length > 0) {
       values.push(id);
       await conn.query(
-        `UPDATE pantai SET ${setClauses.join(", ")} WHERE id = ?`,
+        `UPDATE pantai SET ${setClauses.join(", ")} WHERE id_pantai = ?`,
         values,
       );
     }
 
-    // Update fasilitas if provided
+    // Update fasilitas
     if ("fasilitas" in payload && payload.fasilitas) {
       await conn.query(
-        "DELETE FROM pantai_fasilitas WHERE pantai_id = ?",
+        "DELETE FROM pantai_fasilitas WHERE id_pantai = ?",
         [id],
       );
       for (const [key, value] of Object.entries(payload.fasilitas) as [
@@ -126,28 +126,28 @@ export async function PATCH(
         if (!value) continue;
         const dbName = FASILITAS_KEY_TO_DB[key];
         const [fRows] = await conn.query(
-          "SELECT id FROM fasilitas WHERE nama = ? LIMIT 1",
+          "SELECT id_fasilitas FROM fasilitas WHERE nama_fasilitas = ? LIMIT 1",
           [dbName],
         );
-        const fList = fRows as Array<{ id: number }>;
+        const fList = fRows as Array<{ id_fasilitas: number }>;
         let fasId: number;
         if (fList.length > 0) {
-          fasId = fList[0].id;
+          fasId = fList[0].id_fasilitas;
         } else {
           const [fRes] = await conn.query(
-            "INSERT INTO fasilitas (nama) VALUES (?)",
+            "INSERT INTO fasilitas (nama_fasilitas) VALUES (?)",
             [dbName],
           );
           fasId = (fRes as { insertId: number }).insertId;
         }
         await conn.query(
-          "INSERT IGNORE INTO pantai_fasilitas (pantai_id, fasilitas_id) VALUES (?,?)",
+          "INSERT IGNORE INTO pantai_fasilitas (id_pantai, id_fasilitas) VALUES (?,?)",
           [id, fasId],
         );
       }
     }
 
-    // Update kategori_rekomendasi if provided
+    // Update kategori_rekomendasi
     if ("rekomendasi" in payload && payload.rekomendasi) {
       const rek = payload.rekomendasi;
       const rekClauses: string[] = [];
@@ -160,12 +160,12 @@ export async function PATCH(
       if (rek.ratingKategori !== undefined) { rekClauses.push("rating_kategori=?"); rekValues.push(rek.ratingKategori); }
       if (rek.hargaKategori !== undefined) { rekClauses.push("harga_kategori=?"); rekValues.push(rek.hargaKategori); }
       if (rek.jarakKategori !== undefined) { rekClauses.push("jarak_kategori=?"); rekValues.push(rek.jarakKategori); }
-      if (rek.labelDatabase !== undefined) { rekClauses.push("label_database=?"); rekValues.push(rek.labelDatabase); }
+      if (rek.labelDatabase !== undefined) { rekClauses.push("label_rekomendasi=?"); rekValues.push(rek.labelDatabase); }
 
       if (rekClauses.length > 0) {
         rekValues.push(id);
         await conn.query(
-          `UPDATE kategori_rekomendasi SET ${rekClauses.join(", ")} WHERE pantai_id = ?`,
+          `UPDATE kategori_rekomendasi SET ${rekClauses.join(", ")} WHERE id_pantai = ?`,
           rekValues,
         );
       }
@@ -194,9 +194,9 @@ export async function DELETE(
 
   try {
     await conn.beginTransaction();
-    await conn.query("DELETE FROM pantai_fasilitas WHERE pantai_id = ?", [id]);
-    await conn.query("DELETE FROM kategori_rekomendasi WHERE pantai_id = ?", [id]);
-    await conn.query("DELETE FROM pantai WHERE id = ?", [id]);
+    await conn.query("DELETE FROM pantai_fasilitas WHERE id_pantai = ?", [id]);
+    await conn.query("DELETE FROM kategori_rekomendasi WHERE id_pantai = ?", [id]);
+    await conn.query("DELETE FROM pantai WHERE id_pantai = ?", [id]);
     await conn.commit();
     return NextResponse.json({ success: true });
   } catch (err) {
