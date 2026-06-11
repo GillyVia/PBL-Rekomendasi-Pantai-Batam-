@@ -3,10 +3,11 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useMemo,
+  useState,
   type ReactNode,
 } from "react";
-import { ALL_BEACHES } from "@/data/beaches";
 import type { BeachData } from "@/types/beach";
 
 type BeachesContextValue = {
@@ -21,9 +22,37 @@ type BeachesContextValue = {
 const BeachesContext = createContext<BeachesContextValue | null>(null);
 
 export function BeachesProvider({ children }: { children: ReactNode }) {
-  const beaches = ALL_BEACHES;
-  const loading = false;
-  const error = null;
+  const [beaches, setBeaches] = useState<BeachData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchBeaches = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch("/api/rekomendasi", { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = (await res.json()) as {
+          success: boolean;
+          data: BeachData[];
+          error?: string;
+        };
+        if (!json.success) throw new Error(json.error ?? "Gagal memuat data");
+        if (!cancelled) setBeaches(json.data);
+      } catch (err) {
+        if (!cancelled)
+          setError(err instanceof Error ? err.message : "Gagal memuat data pantai");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    void fetchBeaches();
+    return () => { cancelled = true; };
+  }, []);
 
   const beachesByDistrict = useMemo(
     () =>
@@ -40,6 +69,7 @@ export function BeachesProvider({ children }: { children: ReactNode }) {
     () => Object.keys(beachesByDistrict),
     [beachesByDistrict],
   );
+
   const trendingBeaches = useMemo(
     () => beaches.filter((beach) => beach.trending),
     [beaches],

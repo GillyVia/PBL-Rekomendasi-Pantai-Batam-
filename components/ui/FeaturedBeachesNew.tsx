@@ -133,7 +133,7 @@ function BeachCard({ beach, index, onClick }: { beach: BeachData; index: number;
 }
 
 export function FeaturedBeachesNew() {
-  const { beaches: allBeaches, beachesByDistrict, kecamatanList, trendingBeaches } = useBeachesContext();
+  const { beaches: allBeaches, beachesByDistrict, kecamatanList, trendingBeaches, loading, error } = useBeachesContext();
   const [activeFilter, setActiveFilter] = useState("semua");
   const [selectedBeach, setSelectedBeach] = useState<BeachData | null>(null);
 
@@ -224,7 +224,30 @@ export function FeaturedBeachesNew() {
             ))}
           </div>
 
-          {beaches.length > 0 ? (
+          {loading ? (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="animate-pulse overflow-hidden rounded-[24px] border border-slate-100 bg-white shadow-md shadow-blue-900/5">
+                  <div className="bg-slate-200" style={{ aspectRatio: "4/3" }} />
+                  <div className="space-y-3 p-4">
+                    <div className="h-3 w-3/4 rounded-full bg-slate-200" />
+                    <div className="h-5 w-2/3 rounded-full bg-slate-200" />
+                    <div className="h-3 w-1/2 rounded-full bg-slate-200" />
+                    <div className="h-3 w-full rounded-full bg-slate-200" />
+                    <div className="h-3 w-4/5 rounded-full bg-slate-200" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : error ? (
+            <div className="py-24 text-center">
+              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-red-50">
+                <Waves className="h-8 w-8 text-red-300" />
+              </div>
+              <p className="mb-1 font-semibold text-red-500">Gagal memuat data pantai.</p>
+              <p className="text-sm text-slate-400">{error}</p>
+            </div>
+          ) : beaches.length > 0 ? (
             <>
               <div className="mb-6 flex items-center gap-2">
                 <div className="h-1.5 w-1.5 rounded-full bg-blue-400" />
