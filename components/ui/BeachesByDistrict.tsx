@@ -251,7 +251,7 @@ function LoadingSkeleton() {
 
 /* ─── BeachesByDistrict (main export) ────────────────────────────── */
 export function BeachesByDistrict() {
-  const { beaches, beachesByDistrict, kecamatanList, loading } = useBeachesContext();
+  const { beaches, beachesByDistrict, kecamatanList, loading, selectedDetailBeach, setSelectedDetailBeach } = useBeachesContext();
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
   const avgRating = beaches.length > 0
@@ -428,6 +428,10 @@ export function BeachesByDistrict() {
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
+
+      {selectedDetailBeach && (
+        <BeachDetail beach={selectedDetailBeach} onClose={() => setSelectedDetailBeach(null)} />
+      )}
     </section>
   );
 }

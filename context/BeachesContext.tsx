@@ -17,6 +17,8 @@ type BeachesContextValue = {
   beachesByDistrict: Record<string, BeachData[]>;
   kecamatanList: string[];
   trendingBeaches: BeachData[];
+  selectedDetailBeach: BeachData | null;
+  setSelectedDetailBeach: (beach: BeachData | null) => void;
 };
 
 const BeachesContext = createContext<BeachesContextValue | null>(null);
@@ -25,6 +27,7 @@ export function BeachesProvider({ children }: { children: ReactNode }) {
   const [beaches, setBeaches] = useState<BeachData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedDetailBeach, setSelectedDetailBeach] = useState<BeachData | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -77,7 +80,7 @@ export function BeachesProvider({ children }: { children: ReactNode }) {
 
   return (
     <BeachesContext.Provider
-      value={{ beaches, loading, error, beachesByDistrict, kecamatanList, trendingBeaches }}
+      value={{ beaches, loading, error, beachesByDistrict, kecamatanList, trendingBeaches, selectedDetailBeach, setSelectedDetailBeach }}
     >
       {children}
     </BeachesContext.Provider>
