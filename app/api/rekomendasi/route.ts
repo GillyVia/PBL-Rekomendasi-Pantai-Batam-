@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { predictJ48 } from "@/lib/j48";
+import { predictC45 } from "@/lib/j48";
 import type { BeachData, BeachFacility } from "@/types/beach";
 
 export const dynamic = "force-dynamic";
@@ -84,7 +84,7 @@ export async function GET() {
       const akses_score = Number(row.akses_score) || 3;
       const popularitas_score = Number(row.popularitas_score) || 3;
 
-      const labelJ48 = predictJ48({
+      const labelJ48 = predictC45({
         suasana_score,
         fasilitas_score,
         akses_score,

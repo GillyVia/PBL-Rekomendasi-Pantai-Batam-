@@ -1,0 +1,9 @@
+ROOT [popularitas_score <= 2.5] gain=0.701 gainratio=0.745 n=39
+  YA (<=) [fasilitas_score <= 1.5] gain=0.385 gainratio=0.386 n=25
+    YA (<=) [suasana_score <= 2.5] gain=0.980 gainratio=1.000 n=12
+      YA (<=) -> LEAF class=tidak_direkomendasikan n=7 counts={'tidak_direkomendasikan': 7}
+      TIDAK (>) -> LEAF class=direkomendasikan n=5 counts={'direkomendasikan': 5}
+    TIDAK (>) -> LEAF class=direkomendasikan n=13 counts={'direkomendasikan': 13}
+  TIDAK (>) [suasana_score <= 1.5] gain=0.592 gainratio=1.000 n=14
+    YA (<=) -> LEAF class=direkomendasikan n=2 counts={'direkomendasikan': 2}
+    TIDAK (>) -> LEAF class=sangat_direkomendasikan n=12 counts={'sangat_direkomendasikan': 12}
