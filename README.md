@@ -72,7 +72,10 @@ DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=        ← kosongkan jika tidak ada password (XAMPP default)
 DB_NAME=rekomendasi_pantai_batam
+GEMINI_API_KEY=     ← isi dengan API key dari aistudio.google.com/app/apikey
 ```
+
+> **Catatan untuk anggota tim:** `GEMINI_API_KEY` diperlukan untuk fitur chatbot WavesAI. Setiap anggota tim perlu membuat API key sendiri di [Google AI Studio](https://aistudio.google.com/app/apikey) (gratis, 1500 request/hari). Tanpa API key ini chatbot tidak bisa menjawab, tapi fitur lain tetap berjalan normal.
 
 ### 5. Jalankan development server
 
@@ -122,6 +125,7 @@ PBL-Rekomendasi-Pantai-Batam-/
 - **Backend:** Next.js API Routes, MySQL2
 - **Database:** MySQL/MariaDB
 - **ML Algorithm:** Decision Tree C4.5 (J48) — `lib/j48.ts`
+- **AI Chatbot:** Google Gemini 1.5 Flash — `app/api/chatbot/route.ts`
 - **UI Icons:** Lucide React
 
 ---
@@ -139,3 +143,6 @@ PBL-Rekomendasi-Pantai-Batam-/
 
 **Port 3000 sudah dipakai**
 → Jalankan `npm run dev -- -p 3001` untuk ganti port.
+
+**Chatbot tidak menjawab / error "API key tidak dikonfigurasi"**
+→ Pastikan `GEMINI_API_KEY` sudah diisi di `.env.local`. Dapatkan API key gratis di [aistudio.google.com](https://aistudio.google.com/app/apikey).
