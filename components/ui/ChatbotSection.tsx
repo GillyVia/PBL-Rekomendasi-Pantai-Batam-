@@ -175,7 +175,7 @@ function ChatWindow({ onClose }: { onClose: () => void }) {
 
     const addBotReply = (suggestion: string): void => {
         const userMsg: Message = {
-            id: Date.now(),
+            id: messages.length + 1,
             role: "user",
             text: suggestion,
             timestamp: now(),
@@ -193,11 +193,11 @@ function ChatWindow({ onClose }: { onClose: () => void }) {
                 ...prev,
                 {
                     ...response,
-                    id: Date.now(),
+                    id: prev.length + 1,
                     timestamp: now(),
                 },
             ]);
-        }, 1200 + Math.random() * 600);
+        }, 1500);
     };
     const handleSend = () => {
         const text = input.trim();
