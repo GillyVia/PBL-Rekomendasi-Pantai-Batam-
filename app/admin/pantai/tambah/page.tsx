@@ -9,6 +9,8 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle2,
+  Upload,
+  ImageIcon,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -76,6 +78,28 @@ export default function TambahPantaiPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setUploadError("");
+    const fd = new FormData();
+    fd.append("file", file);
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const json = (await res.json()) as { url?: string; error?: string };
+      if (!res.ok || !json.url) throw new Error(json.error ?? "Gagal upload");
+      setForm((f) => ({ ...f, image: json.url! }));
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Gagal upload foto");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -269,17 +293,45 @@ export default function TambahPantaiPage() {
         {/* Gambar */}
         <section className="rounded-2xl border border-slate-700/50 bg-slate-900 p-5">
           <h2 className="mb-4 text-sm font-bold text-white">2. Gambar</h2>
-          <div>
-            <label className={labelCls}>URL Foto Utama</label>
-            <input
-              type="url"
-              placeholder="https://..."
-              value={form.image}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, image: e.target.value }))
-              }
-              className={inputCls}
-            />
+          <div className="space-y-3">
+            <label className={labelCls}>Foto Utama</label>
+            {form.image && (
+              <div className="relative h-48 w-full overflow-hidden rounded-xl border border-slate-700">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={form.image}
+                  alt="Preview foto"
+                  className="h-full w-full object-cover"
+                />
+              </div>
+            )}
+            <label className={`flex cursor-pointer items-center gap-3 rounded-xl border border-dashed px-4 py-3 transition-colors ${uploading ? "cursor-not-allowed border-slate-700 bg-slate-800/30" : "border-slate-600 bg-slate-800/50 hover:border-blue-500/60 hover:bg-slate-800"}`}>
+              {uploading ? (
+                <Loader2 className="h-4 w-4 animate-spin text-blue-400" />
+              ) : (
+                <Upload className="h-4 w-4 text-slate-400" />
+              )}
+              <div>
+                <p className="text-sm font-medium text-slate-300">
+                  {uploading ? "Mengupload..." : form.image ? "Ganti Foto" : "Pilih Foto"}
+                </p>
+                <p className="text-xs text-slate-500">JPG, JPEG, PNG — maks. 5 MB</p>
+              </div>
+              <ImageIcon className="ml-auto h-4 w-4 text-slate-600" />
+              <input
+                type="file"
+                accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                onChange={handleImageUpload}
+                disabled={uploading}
+                className="hidden"
+              />
+            </label>
+            {uploadError && (
+              <p className="flex items-center gap-1.5 text-xs text-red-400">
+                <AlertCircle className="h-3.5 w-3.5" />
+                {uploadError}
+              </p>
+            )}
           </div>
         </section>
 

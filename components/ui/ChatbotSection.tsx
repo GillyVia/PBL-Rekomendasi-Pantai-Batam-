@@ -32,70 +32,22 @@ type Message = {
     timestamp: string;
 };
 
+type HistoryItem = { role: "user" | "model"; parts: string };
+
 const INITIAL_MESSAGES: Message[] = [
     {
         id: 1,
         role: "bot",
-        text: "Halo! Selamat datang di BatamPantai 👋 Saya **WavesAI**, asisten perjalananmu. Mau mencari pantai apa hari ini?",
+        text: "Halo! Selamat datang di BatamPantai 👋 Saya **WavesAI**, asisten perjalananmu bertenaga AI. Mau mencari pantai apa hari ini?",
         suggestions: [
-            "Pantai untuk keluarga",
+            "Pantai terbaik untuk keluarga",
             "Spot snorkeling terbaik",
             "Pantai gratis di Batam",
             "Rekomendasi sunset",
         ],
-        timestamp: "10:30",
+        timestamp: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
     },
 ];
-
-const BOT_RESPONSES: Record<string, Message> = {
-    "Pantai untuk keluarga": {
-        id: 0,
-        role: "bot",
-        text: "Untuk wisata keluarga, saya sangat merekomendasikan **Pantai Nongsa**! Air tenang, pasir putih, dan fasilitas lengkap untuk anak-anak. 🏖️",
-        beachCard: { name: "Pantai Nongsa", rating: 4.9, tag: "Favorit Keluarga" },
-        suggestions: [
-            "Jam buka pantai?",
-            "Berapa biaya masuk?",
-            "Ada fasilitas apa saja?",
-        ],
-        timestamp: "",
-    },
-    "Spot snorkeling terbaik": {
-        id: 0,
-        role: "bot",
-        text: "Untuk snorkeling, **Pantai Melur** di Galang adalah pilihan terbaik! Air bening seperti kristal dengan terumbu karang masih alami. 🤿",
-        beachCard: { name: "Pantai Melur", rating: 4.8, tag: "Snorkeling #1" },
-        suggestions: ["Sewa alat snorkeling?", "Cara ke sana?", "Cocok untuk pemula?"],
-        timestamp: "",
-    },
-    "Pantai gratis di Batam": {
-        id: 0,
-        role: "bot",
-        text: "Ada beberapa pantai gratis yang keren di Batam! 🎉 Pantai Nongsa dan Pantai Melayu tidak memungut biaya masuk.",
-        suggestions: ["Pantai Nongsa", "Pantai Melayu", "Pantai lainnya yang gratis?"],
-        timestamp: "",
-    },
-    "Rekomendasi sunset": {
-        id: 0,
-        role: "bot",
-        text: "Untuk sunset terbaik, kamu harus ke **Pantai Melayu**! Waktu terbaik pukul 17:30–18:30 WIB. Bawa kamera ya! 🌅",
-        beachCard: { name: "Pantai Melayu", rating: 4.6, tag: "Sunset Spot" },
-        suggestions: ["Parkir tersedia?", "Rekomendasi tempat makan?"],
-        timestamp: "",
-    },
-};
-
-const DEFAULT_RESPONSE: Message = {
-    id: 0,
-    role: "bot",
-    text: "Terima kasih atas pertanyaannya! 😊 Untuk info lebih detail, kamu juga bisa menghubungi kami via WhatsApp.",
-    suggestions: [
-        "Kembali ke menu utama",
-        "Pantai untuk keluarga",
-        "Spot snorkeling terbaik",
-    ],
-    timestamp: "",
-};
 
 const TEASER_CHIPS = [
     {
@@ -156,16 +108,33 @@ const TEASER_CHIPS = [
     },
 ];
 
-function ChatWindow({ onClose }: { onClose: () => void }) {
+function ChatWindow({
+    onClose,
+    initialMessage,
+}: {
+    onClose: () => void;
+    initialMessage?: string | null;
+}) {
     const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
     const [input, setInput] = useState("");
     const [typing, setTyping] = useState(false);
     const [minimized, setMinimized] = useState(false);
+    const [chatHistory, setChatHistory] = useState<HistoryItem[]>([]);
     const bottomRef = useRef<HTMLDivElement>(null);
+    const initialSentRef = useRef(false);
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, typing]);
+
+    // Kirim initialMessage (dari chip suggestion) saat pertama buka
+    useEffect(() => {
+        if (initialMessage && !initialSentRef.current) {
+            initialSentRef.current = true;
+            void sendToAI(initialMessage, []);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [initialMessage]);
 
     const now = () =>
         new Date().toLocaleTimeString("id-ID", {
@@ -173,37 +142,86 @@ function ChatWindow({ onClose }: { onClose: () => void }) {
             minute: "2-digit",
         });
 
-    const addBotReply = (suggestion: string): void => {
+    const sendToAI = async (userText: string, history: HistoryItem[]): Promise<void> => {
         const userMsg: Message = {
             id: messages.length + 1,
             role: "user",
-            text: suggestion,
+            text: userText,
             timestamp: now(),
         };
-
         setMessages(prev => [...prev, userMsg]);
         setTyping(true);
 
-        setTimeout(() => {
-            const response = BOT_RESPONSES[suggestion] || DEFAULT_RESPONSE;
+        const updatedHistory: HistoryItem[] = [...history, { role: "user", parts: userText }];
+
+        try {
+            const res = await fetch("/api/chatbot", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: userText, history }),
+            });
+
+            const data = (await res.json()) as {
+                success: boolean;
+                reply?: string;
+                suggestions?: string[];
+                error?: string;
+            };
 
             setTyping(false);
 
+            if (data.success && data.reply) {
+                const botMsg: Message = {
+                    id: Date.now() + 1,
+                    role: "bot",
+                    text: data.reply,
+                    suggestions: data.suggestions?.length ? data.suggestions : undefined,
+                    timestamp: now(),
+                };
+                setMessages(prev => [...prev, botMsg]);
+                setChatHistory([...updatedHistory, { role: "model", parts: data.reply! }]);
+            } else {
+                setMessages(prev => [
+                    ...prev,
+                    {
+                        id: Date.now() + 1,
+                        role: "bot",
+                        text: "Maaf, saya sedang mengalami gangguan. Silakan coba lagi. 🙏",
+                        suggestions: ["Pantai terbaik di Batam", "Pantai untuk keluarga"],
+                        timestamp: now(),
+                    },
+                ]);
+            }
+        } catch {
+            setTyping(false);
             setMessages(prev => [
                 ...prev,
                 {
+<<<<<<< HEAD
                     ...response,
                     id: prev.length + 1,
                     timestamp: now(),
                 },
             ]);
         }, 1500);
+=======
+                    id: Date.now() + 1,
+                    role: "bot",
+                    text: "Koneksi bermasalah. Pastikan server berjalan dan coba lagi. 🙏",
+                    timestamp: now(),
+                },
+            ]);
+        }
+>>>>>>> 4f7f08de4a9a519ce31772be1e8257da06fc52a1
     };
+
+    const addBotReply = (text: string): void => {
+        void sendToAI(text, chatHistory);
+    };
+
     const handleSend = () => {
         const text = input.trim();
-
         if (!text) return;
-
         setInput("");
         addBotReply(text);
     };
@@ -769,8 +787,17 @@ function SuggestionChips({
 
 export function ChatbotSection() {
     const [chatOpen, setChatOpen] = useState(false);
+    const [pendingMessage, setPendingMessage] = useState<string | null>(null);
 
-    const handleStartChat = () => setChatOpen(true);
+    const handleStartChat = (msg?: string) => {
+        if (msg) setPendingMessage(msg);
+        setChatOpen(true);
+    };
+
+    const handleClose = () => {
+        setChatOpen(false);
+        setPendingMessage(null);
+    };
 
     return (
         <>
@@ -851,7 +878,7 @@ export function ChatbotSection() {
                     </div>
 
                     <div className="grid items-start gap-8 lg:grid-cols-[360px_1fr] xl:grid-cols-[400px_1fr]">
-                        <AssistantCard onStartChat={handleStartChat} />
+                        <AssistantCard onStartChat={() => handleStartChat()} />
 
                         <div className="flex flex-col gap-6">
                             <ChatPreview />
@@ -874,10 +901,7 @@ export function ChatbotSection() {
                                 </div>
 
                                 <SuggestionChips
-                                    onChipClick={(label) => {
-                                        setChatOpen(true);
-                                        console.log(label);
-                                    }}
+                                    onChipClick={(label) => handleStartChat(label)}
                                 />
 
                                 <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
@@ -886,7 +910,7 @@ export function ChatbotSection() {
                                     </p>
 
                                     <button
-                                        onClick={handleStartChat}
+                                        onClick={() => handleStartChat()}
                                         className="group flex items-center gap-1.5 text-[12px] font-black text-blue-600 transition-colors hover:text-blue-800"
                                     >
                                         Mulai Chat
@@ -969,12 +993,15 @@ export function ChatbotSection() {
             <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
                 {chatOpen && (
                     <div className="mb-2">
-                        <ChatWindow onClose={() => setChatOpen(false)} />
+                        <ChatWindow
+                            onClose={handleClose}
+                            initialMessage={pendingMessage}
+                        />
                     </div>
                 )}
 
                 <button
-                    onClick={() => setChatOpen(!chatOpen)}
+                    onClick={() => chatOpen ? handleClose() : handleStartChat()}
                     className="relative flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-2xl shadow-blue-400/40 transition-all hover:shadow-blue-400/60 active:scale-95"
                     style={{ background: "linear-gradient(135deg, #2563EB, #1D4ED8)" }}
                 >

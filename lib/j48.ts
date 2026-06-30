@@ -1,12 +1,12 @@
-// AUTO-GENERATED dari c45_pipeline.py — JANGAN EDIT MANUAL
-// Tempel ke dalam fungsi predictJ48() di lib/j48.ts
+// AUTO-GENERATED dari c45_custom.py — JANGAN EDIT MANUAL
+// C4.5 asli: Gain Ratio + Pessimistic Error Pruning (CF=0.25)
+// Dilatih pada 39 data pantai Batam dari database (skala skor 1–3).
+// akses_score diterima di parameter untuk kompatibilitas, tapi tidak dipilih
+// oleh algoritma C4.5 (information gain tidak memenuhi threshold seleksi).
 
-export type RecommendationLabel =
-  | "tidak_direkomendasikan"
-  | "direkomendasikan"
-  | "sangat_direkomendasikan";
+import type { RecommendationLabel } from "@/types/beach";
 
-export function predictJ48({
+export function predictC45({
   suasana_score,
   fasilitas_score,
   akses_score,
@@ -18,20 +18,25 @@ export function predictJ48({
   popularitas_score: number;
 }): RecommendationLabel {
   if (popularitas_score <= 2.5) {
-    if (suasana_score <= 1.5) {
-      // n=3, entropy=0.0
-      return "tidak_direkomendasikan"; // Tidak Direkomendasikan
+    if (fasilitas_score <= 1.5) {
+      if (suasana_score <= 2.5) {
+        // n=7, counts={'tidak_direkomendasikan': 7}
+        return "tidak_direkomendasikan";
+      } else {
+        // n=5, counts={'direkomendasikan': 5}
+        return "direkomendasikan";
+      }
     } else {
-      // n=21, entropy=0.276195
-      return "direkomendasikan"; // Direkomendasikan
+      // n=13, counts={'direkomendasikan': 13}
+      return "direkomendasikan";
     }
   } else {
-    if (fasilitas_score <= 1.5) {
-      // n=3, entropy=0.918296
-      return "direkomendasikan"; // Direkomendasikan
+    if (suasana_score <= 1.5) {
+      // n=2, counts={'direkomendasikan': 2}
+      return "direkomendasikan";
     } else {
-      // n=12, entropy=0.413817
-      return "sangat_direkomendasikan"; // Sangat Direkomendasikan
+      // n=12, counts={'sangat_direkomendasikan': 12}
+      return "sangat_direkomendasikan";
     }
   }
 }
