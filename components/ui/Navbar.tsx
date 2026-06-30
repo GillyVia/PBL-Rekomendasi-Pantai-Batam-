@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Waves,
   Home,
@@ -16,13 +16,14 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+// Semua item termasuk Statistik
 const NAV_ITEMS = [
-  { id: "beranda", label: "Beranda", href: "#beranda", icon: Home, dropdown: null },
-  { id: "daftar-pantai", label: "Daftar Pantai", href: "#destinasi", icon: List, dropdown: null },
-  { id: "statistik", label: "Statistik", href: "#statistik", icon: BarChart3, dropdown: null },
-  { id: "bandingkan", label: "Bandingkan", href: "#bandingkan", icon: Columns2, dropdown: null },
-  { id: "peta", label: "Peta", href: "#peta", icon: Map, dropdown: null },
-  { id: "chatbot", label: "Chatbot", href: "#bantuan", icon: MessageCircle, badge: true, dropdown: null },
+  { id: "beranda", label: "Beranda", href: "#beranda", icon: Home },
+  { id: "destinasi", label: "Daftar Pantai", href: "#destinasi", icon: List },
+  { id: "statistik", label: "Statistik", href: "#statistik", icon: BarChart3 },
+  { id: "bandingkan", label: "Bandingkan", href: "#bandingkan", icon: Columns2 },
+  { id: "peta", label: "Peta", href: "#peta", icon: Map },
+  { id: "bantuan", label: "Chatbot", href: "#bantuan", icon: MessageCircle, badge: true },
 ] as const;
 
 function useScrollProgress() {
@@ -97,6 +98,62 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const scrollProgress = useScrollProgress();
 
+  // Ref untuk elemen nav item (desktop)
+  const navRefs = useRef<{ [key: string]: HTMLAnchorElement | null }>({});
+  const [indicatorStyle, setIndicatorStyle] = useState<{ left: number; width: number }>({ left: 0, width: 0 });
+
+  // Observer untuk deteksi section aktif
+  useEffect(() => {
+    const sections = NAV_ITEMS.map(item =>
+      document.getElementById(item.id)
+    ).filter(Boolean) as HTMLElement[];
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.find(entry => entry.isIntersecting);
+        if (visible) {
+          setActiveId(visible.target.id);
+        }
+      },
+      {
+        threshold: 0.35,
+        rootMargin: "-20% 0px -60% 0px",
+      }
+    );
+
+    sections.forEach(section => observer.observe(section));
+    return () => observer.disconnect();
+  }, []);
+
+  // Update indicator saat activeId berubah
+  const updateIndicator = () => {
+    const activeElement = navRefs.current[activeId];
+    if (activeElement) {
+      const parent = activeElement.parentElement;
+      if (parent) {
+        const parentRect = parent.getBoundingClientRect();
+        const rect = activeElement.getBoundingClientRect();
+        setIndicatorStyle({
+          left: rect.left - parentRect.left + (rect.width / 2) - 12, // setengah lebar indicator (24px / 2)
+          width: rect.width * 0.5, // lebar indicator setengah dari item
+        });
+      }
+    }
+  };
+
+  useEffect(() => {
+    updateIndicator();
+    // Update ulang saat window resize atau scroll (untuk menghitung ulang posisi)
+    const handleResize = () => updateIndicator();
+    window.addEventListener("resize", handleResize);
+    window.addEventListener("scroll", updateIndicator, { passive: true });
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("scroll", updateIndicator);
+    };
+  }, [activeId]);
+
+  // Efek scroll untuk mengubah background navbar
   useEffect(() => {
     const onScroll = () => { setScrolled(window.scrollY > 28); };
     onScroll();
@@ -104,6 +161,7 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Tutup mobile drawer saat layar lebar
   useEffect(() => {
     const onResize = () => { if (window.innerWidth >= 1024) setMobileOpen(false); };
     window.addEventListener("resize", onResize);
@@ -118,12 +176,14 @@ export function Navbar() {
   return (
     <>
       <nav className={`fixed left-0 right-0 top-0 z-50 transition-all duration-300 ${isLight ? "border-b border-slate-100/80 bg-white/98 shadow-[0_1px_32px_rgba(30,64,175,0.08)] backdrop-blur-2xl" : "bg-transparent"}`}>
+        {/* Progress bar */}
         <div className="absolute left-0 right-0 top-0 z-10 h-[2.5px] bg-transparent">
           <div className="h-full bg-gradient-to-r from-blue-500 via-blue-400 to-amber-400 transition-all duration-75" style={{ width: `${scrollProgress}%` }} />
         </div>
 
         <div className="mx-auto max-w-[1320px] px-4 sm:px-6 xl:px-8">
           <div className={`flex items-center gap-4 transition-all duration-300 xl:gap-6 ${scrolled ? "h-[60px]" : "h-[72px]"}`}>
+            {/* Logo */}
             <a href="#beranda" onClick={() => setActiveId("beranda")} className="group flex flex-shrink-0 items-center gap-2.5">
               <div className="relative flex-shrink-0">
                 <div className={`flex items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-blue-800 shadow-lg shadow-blue-600/25 transition-all duration-300 group-hover:shadow-blue-600/40 ${scrolled ? "h-8 w-8" : "h-9 w-9"}`}>
@@ -144,12 +204,26 @@ export function Navbar() {
               </div>
             </a>
 
-            <div className="hidden flex-1 items-center justify-center gap-0.5 lg:flex">
+            {/* Navbar items - desktop dengan indicator */}
+            <div className="hidden flex-1 items-center justify-center gap-0.5 lg:flex relative">
               {NAV_ITEMS.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeId === item.id;
                 return (
-                  <a key={item.id} href={item.href} onClick={() => setActiveId(item.id)} className={`group relative flex select-none items-center gap-1.5 rounded-xl px-3 py-2 text-[13px] font-semibold transition-all duration-200 ${textBase} ${hoverBg} ${isActive ? `${textActive} ${isLight ? "bg-blue-50" : "bg-white/15"}` : ""}`}>
+                  <a
+                    key={item.id}
+                    ref={(el) => { navRefs.current[item.id] = el; }}
+                    href={item.href}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      const target = document.getElementById(item.id);
+                      if (target) {
+                        target.scrollIntoView({ behavior: "smooth", block: "start" });
+                        setActiveId(item.id);
+                      }
+                    }}
+                    className={`group relative flex select-none items-center gap-1.5 rounded-xl px-3 py-2 text-[13px] font-semibold transition-all duration-200 ${textBase} ${hoverBg} ${isActive ? `${textActive} ${isLight ? "bg-blue-50" : "bg-white/15"}` : ""}`}
+                  >
                     <Icon className={`flex-shrink-0 transition-all duration-200 ${isActive ? `h-3.5 w-3.5 opacity-100 ${isLight ? "text-blue-600" : "text-white"}` : "h-3.5 w-3.5 -ml-3.5 opacity-0 group-hover:ml-0 group-hover:opacity-100"}`} />
                     <span>{item.label}</span>
                     {"badge" in item && item.badge && (
@@ -158,12 +232,20 @@ export function Navbar() {
                         <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-amber-400" />
                       </span>
                     )}
-                    {isActive && <span className={`absolute bottom-1 left-1/2 h-[2.5px] -translate-x-1/2 rounded-full transition-all duration-300 ${isLight ? "bg-blue-600" : "bg-white"}`} style={{ width: "calc(100% - 24px)" }} />}
                   </a>
                 );
               })}
+              {/* Indicator garis bawah bergerak */}
+              <span
+                className="absolute bottom-0 h-[2.5px] rounded-full bg-gradient-to-r from-blue-500 to-amber-400 transition-all duration-300"
+                style={{
+                  left: indicatorStyle.left,
+                  width: indicatorStyle.width,
+                }}
+              />
             </div>
 
+            {/* Login Admin (desktop) */}
             <div className="ml-auto hidden flex-shrink-0 items-center lg:flex">
               <button onClick={() => router.push("/admin/masuk")} className={`flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-[12px] font-semibold transition-all duration-200 ${isLight ? "border-slate-200 bg-white text-slate-500 shadow-sm hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700" : "border-white/20 bg-white/10 text-white/70 backdrop-blur-sm hover:border-white/40 hover:bg-white/20 hover:text-white"}`} title="Masuk ke panel admin">
                 <ShieldCheck className={`h-3.5 w-3.5 flex-shrink-0 ${isLight ? "text-amber-400" : "text-amber-300"}`} />
@@ -171,6 +253,7 @@ export function Navbar() {
               </button>
             </div>
 
+            {/* Mobile menu toggle */}
             <div className="ml-auto flex items-center gap-1.5 lg:hidden">
               <button onClick={() => setMobileOpen((v) => !v)} className={`rounded-xl p-2 transition-colors ${isLight ? "text-slate-700" : "text-white"}`} aria-label="Menu">
                 {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
