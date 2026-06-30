@@ -133,7 +133,7 @@ function ChatWindow({
             initialSentRef.current = true;
             void sendToAI(initialMessage, []);
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [initialMessage]);
 
     const now = () =>
@@ -194,17 +194,9 @@ function ChatWindow({
             }
         } catch {
             setTyping(false);
-            setMessages(prev => [
+            setMessages((prev) => [
                 ...prev,
                 {
-<<<<<<< HEAD
-                    ...response,
-                    id: prev.length + 1,
-                    timestamp: now(),
-                },
-            ]);
-        }, 1500);
-=======
                     id: Date.now() + 1,
                     role: "bot",
                     text: "Koneksi bermasalah. Pastikan server berjalan dan coba lagi. 🙏",
@@ -212,7 +204,6 @@ function ChatWindow({
                 },
             ]);
         }
->>>>>>> 4f7f08de4a9a519ce31772be1e8257da06fc52a1
     };
 
     const addBotReply = (text: string): void => {
@@ -295,8 +286,8 @@ function ChatWindow({
                                 >
                                     <div
                                         className={`rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${msg.role === "bot"
-                                                ? "rounded-tl-sm border border-slate-100 bg-white text-slate-700 shadow-sm"
-                                                : "rounded-tr-sm bg-blue-600 text-white"
+                                            ? "rounded-tl-sm border border-slate-100 bg-white text-slate-700 shadow-sm"
+                                            : "rounded-tr-sm bg-blue-600 text-white"
                                             }`}
                                     >
                                         {msg.text.split("**").map((part, i) =>
