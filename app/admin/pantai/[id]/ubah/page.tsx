@@ -64,6 +64,10 @@ export default function UbahPantaiPage() {
     koordinatLng: "0",
     featured: false,
     trending: false,
+    suasanaScore: "2",
+    fasilitasScore: "2",
+    aksesScore: "2",
+    popularitasScore: "2",
   });
   const [fasilitas, setFasilitas] = useState<BeachFacility>({
     toilet: false,
@@ -136,6 +140,10 @@ export default function UbahPantaiPage() {
       koordinatLng: String(beach.koordinat.lng),
       featured: beach.featured ?? false,
       trending: beach.trending,
+      suasanaScore: String(beach.rekomendasi?.suasanaScore ?? 2),
+      fasilitasScore: String(beach.rekomendasi?.fasilitasScore ?? 2),
+      aksesScore: String(beach.rekomendasi?.aksesScore ?? 2),
+      popularitasScore: String(beach.rekomendasi?.popularitasScore ?? 2),
     });
     setFasilitas(beach.fasilitas);
   }, [beach]);
@@ -196,6 +204,17 @@ export default function UbahPantaiPage() {
           lng: parseFloat(form.koordinatLng) || 0,
         },
         fasilitas,
+        rekomendasi: {
+          suasanaScore: parseInt(form.suasanaScore) || 2,
+          fasilitasScore: parseInt(form.fasilitasScore) || 2,
+          aksesScore: parseInt(form.aksesScore) || 2,
+          popularitasScore: parseInt(form.popularitasScore) || 2,
+          ratingKategori: beach.rekomendasi?.ratingKategori ?? null,
+          hargaKategori: beach.rekomendasi?.hargaKategori ?? null,
+          jarakKategori: beach.rekomendasi?.jarakKategori ?? null,
+          labelDatabase: beach.rekomendasi?.labelDatabase ?? null,
+          labelJ48: beach.rekomendasi?.labelJ48 ?? "direkomendasikan",
+        },
       };
 
       await updateBeach(id, payload);
@@ -505,6 +524,38 @@ export default function UbahPantaiPage() {
                 onChange={(e) => setForm((f) => ({ ...f, googleMapsUrl: e.target.value }))}
                 className={inputCls} />
             </div>
+          </div>
+        </section>
+
+        {/* Skor Rekomendasi C4.5 */}
+        <section className="rounded-2xl border border-blue-700/40 bg-slate-900 p-5">
+          <h2 className="mb-1 text-sm font-bold text-white">Skor Rekomendasi (C4.5)</h2>
+          <p className="mb-4 text-xs text-slate-400">
+            Skor ini menentukan label rekomendasi yang dihitung algoritma C4.5.{" "}
+            <span className="text-blue-400 font-medium">1 = Rendah · 2 = Sedang · 3 = Tinggi</span>
+          </p>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {(
+              [
+                { key: "suasanaScore", label: "Suasana / Pemandangan" },
+                { key: "fasilitasScore", label: "Kelengkapan Fasilitas" },
+                { key: "aksesScore", label: "Kemudahan Akses" },
+                { key: "popularitasScore", label: "Popularitas / Ulasan" },
+              ] as { key: "suasanaScore" | "fasilitasScore" | "aksesScore" | "popularitasScore"; label: string }[]
+            ).map(({ key, label }) => (
+              <div key={key}>
+                <label className={labelCls}>{label}</label>
+                <select
+                  value={form[key]}
+                  onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                  className={inputCls}
+                >
+                  <option value="1">1 – Rendah</option>
+                  <option value="2">2 – Sedang</option>
+                  <option value="3">3 – Tinggi</option>
+                </select>
+              </div>
+            ))}
           </div>
         </section>
 

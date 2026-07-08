@@ -73,6 +73,10 @@ export default function TambahPantaiPage() {
     koordinatLng: "0",
     featured: false,
     trending: false,
+    suasanaScore: "2",
+    fasilitasScore: "2",
+    aksesScore: "2",
+    popularitasScore: "2",
   });
   const [fasilitas, setFasilitas] = useState<BeachFacility>(INITIAL_FASILITAS);
   const [loading, setLoading] = useState(false);
@@ -163,10 +167,10 @@ export default function TambahPantaiPage() {
         kategori: [],
         fasilitas,
         rekomendasi: {
-          suasanaScore: 3,
-          fasilitasScore: 3,
-          aksesScore: 3,
-          popularitasScore: 3,
+          suasanaScore: parseInt(form.suasanaScore) || 2,
+          fasilitasScore: parseInt(form.fasilitasScore) || 2,
+          aksesScore: parseInt(form.aksesScore) || 2,
+          popularitasScore: parseInt(form.popularitasScore) || 2,
           ratingKategori: null,
           hargaKategori: null,
           jarakKategori: null,
@@ -678,6 +682,38 @@ export default function TambahPantaiPage() {
                 className={inputCls}
               />
             </div>
+          </div>
+        </section>
+
+        {/* Skor Rekomendasi C4.5 */}
+        <section className="rounded-2xl border border-blue-700/40 bg-slate-900 p-5">
+          <h2 className="mb-1 text-sm font-bold text-white">9. Skor Rekomendasi (C4.5)</h2>
+          <p className="mb-4 text-xs text-slate-400">
+            Isi skor 1–3 untuk setiap aspek. Algoritma C4.5 akan otomatis menentukan label
+            rekomendasi berdasarkan skor ini. <span className="text-blue-400 font-medium">1 = Rendah · 2 = Sedang · 3 = Tinggi</span>
+          </p>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {(
+              [
+                { key: "suasanaScore", label: "Suasana / Pemandangan" },
+                { key: "fasilitasScore", label: "Kelengkapan Fasilitas" },
+                { key: "aksesScore", label: "Kemudahan Akses" },
+                { key: "popularitasScore", label: "Popularitas / Ulasan" },
+              ] as { key: "suasanaScore" | "fasilitasScore" | "aksesScore" | "popularitasScore"; label: string }[]
+            ).map(({ key, label }) => (
+              <div key={key}>
+                <label className={labelCls}>{label}</label>
+                <select
+                  value={form[key]}
+                  onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                  className={inputCls}
+                >
+                  <option value="1">1 – Rendah</option>
+                  <option value="2">2 – Sedang</option>
+                  <option value="3">3 – Tinggi</option>
+                </select>
+              </div>
+            ))}
           </div>
         </section>
 

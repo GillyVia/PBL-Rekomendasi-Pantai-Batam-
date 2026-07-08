@@ -34,16 +34,8 @@ export default function AdminMasukPage() {
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 px-4">
 
-      {/* Tombol kembali — pojok kiri atas */}
-      <a
-        href="/"
-        className="absolute left-5 top-5 flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-300 backdrop-blur-sm transition-all duration-200 hover:border-white/20 hover:bg-white/10 hover:text-white"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Kembali ke Beranda
-      </a>
 
-      <div className="w-full max-w-md">
+<div className="w-full max-w-md">
         {/* Logo */}
         <div className="mb-8 flex flex-col items-center gap-3">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 shadow-xl shadow-blue-900/50">
@@ -129,18 +121,6 @@ export default function AdminMasukPage() {
             </button>
           </form>
 
-          {/* Demo hint */}
-          <div className="mt-6 rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
-            <p className="text-xs font-semibold text-amber-400">
-              Demo Credentials
-            </p>
-            <p className="mt-1 text-xs text-amber-300/70">
-              Username: <span className="font-mono font-bold">admin</span> &nbsp;|&nbsp;
-              Password: <span className="font-mono font-bold">batam2026</span>
-            </p>
-          </div>
-
-          {/* Link kembali — bawah card */}
           <div className="mt-5 border-t border-white/10 pt-5 text-center">
             <a
               href="/"
@@ -150,6 +130,7 @@ export default function AdminMasukPage() {
               Bukan admin? Kembali ke halaman wisatawan
             </a>
           </div>
+
         </div>
       </div>
     </div>

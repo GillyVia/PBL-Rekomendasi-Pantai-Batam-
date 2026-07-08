@@ -22,6 +22,7 @@ import {
     Wrench,
     Home,
     Wifi,
+    RotateCcw,
 } from "lucide-react";
 import { useBeachesContext } from "@/context/BeachesContext";
 import type { BeachData } from "@/types/beach";
@@ -353,33 +354,21 @@ export function CompareThreeBeaches() {
     const sectionRef = useRef<HTMLElement | null>(null);
     const inView = useInView(sectionRef);
 
-    useEffect(() => {
-        if (allBeaches.length >= 3) {
-            if (!beachA) setBeachA(allBeaches[0]);
-            if (!beachB) setBeachB(allBeaches[1]);
-            if (!beachC) setBeachC(allBeaches[2]);
-        }
-    }, [allBeaches]);
+    const selectedCount = [beachA, beachB, beachC].filter(Boolean).length;
+    const allSelected = beachA !== null && beachB !== null && beachC !== null;
 
-    if (loading || !beachA || !beachB || !beachC) {
-        return (
-            <section
-                id="bandingkan"
-                className="py-12 lg:py-16 flex items-center justify-center"
-                style={{ background: "#F8FAFF" }}
-            >
-                <div className="text-center">
-                    <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
-                    <p className="text-sm font-semibold text-slate-600">Memuat data pantai...</p>
-                </div>
-            </section>
-        );
-    }
+    const handleReset = () => {
+        setBeachA(null);
+        setBeachB(null);
+        setBeachC(null);
+    };
 
-    const beaches = [beachA, beachB, beachC] as [BeachData, BeachData, BeachData];
-    const facilityKeys = Object.keys(beachA.fasilitas) as FacilityKey[];
+    const facilityKeys = allSelected
+        ? (Object.keys(beachA!.fasilitas) as FacilityKey[])
+        : [];
 
     const calcScores = (): [number, number, number] => {
+        if (!allSelected) return [0, 0, 0];
         let scoreA = 0;
         let scoreB = 0;
         let scoreC = 0;
@@ -398,29 +387,44 @@ export function CompareThreeBeaches() {
             if (c === min) scoreC++;
         };
 
-        higherWins(beachA.rating, beachB.rating, beachC.rating);
-        higherWins(beachA.reviews, beachB.reviews, beachC.reviews);
-        lowerWins(beachA.tiketMasukRp, beachB.tiketMasukRp, beachC.tiketMasukRp);
-        lowerWins(beachA.jarakDariKota, beachB.jarakDariKota, beachC.jarakDariKota);
-        higherWins(beachA.aktivitas.length, beachB.aktivitas.length, beachC.aktivitas.length);
+        higherWins(beachA!.rating, beachB!.rating, beachC!.rating);
+        higherWins(beachA!.reviews, beachB!.reviews, beachC!.reviews);
+        lowerWins(beachA!.tiketMasukRp, beachB!.tiketMasukRp, beachC!.tiketMasukRp);
+        lowerWins(beachA!.jarakDariKota, beachB!.jarakDariKota, beachC!.jarakDariKota);
+        higherWins(beachA!.aktivitas.length, beachB!.aktivitas.length, beachC!.aktivitas.length);
 
         facilityKeys.forEach((key) => {
-            const values = [beachA.fasilitas[key], beachB.fasilitas[key], beachC.fasilitas[key]];
+            const values = [beachA!.fasilitas[key], beachB!.fasilitas[key], beachC!.fasilitas[key]];
             const trueCount = values.filter(Boolean).length;
-
             if (trueCount > 0 && trueCount < 3) {
-                if (beachA.fasilitas[key]) scoreA++;
-                if (beachB.fasilitas[key]) scoreB++;
-                if (beachC.fasilitas[key]) scoreC++;
+                if (beachA!.fasilitas[key]) scoreA++;
+                if (beachB!.fasilitas[key]) scoreB++;
+                if (beachC!.fasilitas[key]) scoreC++;
             }
         });
 
         return [scoreA, scoreB, scoreC];
     };
 
-    const [scoreA, scoreB, scoreC] = calcScores();
-    const scores = [scoreA, scoreB, scoreC] as [number, number, number];
+    const scores = calcScores();
+    const [scoreA, scoreB, scoreC] = scores;
     const maxScore = Math.max(...scores);
+    const beaches = (allSelected ? [beachA!, beachB!, beachC!] : []) as unknown as [BeachData, BeachData, BeachData];
+
+    if (loading) {
+        return (
+            <section
+                id="bandingkan"
+                className="py-12 lg:py-16 flex items-center justify-center"
+                style={{ background: "#F8FAFF" }}
+            >
+                <div className="text-center">
+                    <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
+                    <p className="text-sm font-semibold text-slate-600">Memuat data pantai...</p>
+                </div>
+            </section>
+        );
+    }
 
     const textValue = (text: string, isWin: boolean) => (
         <span className={`text-[11px] font-bold ${isWin ? "text-blue-700" : "text-slate-500"}`}>
@@ -465,25 +469,38 @@ export function CompareThreeBeaches() {
                     </p>
                 </div>
 
+                <div className="flex justify-end mb-2 min-h-[28px]">
+                    {selectedCount > 0 && (
+                        <button
+                            type="button"
+                            onClick={handleReset}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-rose-500 hover:border-rose-300 hover:bg-rose-50 text-[11px] font-semibold transition-all shadow-sm"
+                        >
+                            <RotateCcw className="w-3 h-3" />
+                            Reset Pilihan
+                        </button>
+                    )}
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
                     {[
                         {
                             label: "Pantai Pertama",
                             value: beachA,
                             onChange: setBeachA,
-                            exclude: [beachB.id, beachC.id],
+                            exclude: [beachB?.id, beachC?.id].filter(Boolean) as string[],
                         },
                         {
                             label: "Pantai Kedua",
                             value: beachB,
                             onChange: setBeachB,
-                            exclude: [beachA.id, beachC.id],
+                            exclude: [beachA?.id, beachC?.id].filter(Boolean) as string[],
                         },
                         {
                             label: "Pantai Ketiga",
                             value: beachC,
                             onChange: setBeachC,
-                            exclude: [beachA.id, beachB.id],
+                            exclude: [beachA?.id, beachB?.id].filter(Boolean) as string[],
                         },
                     ].map((selector) => (
                         <div key={selector.label}>
@@ -500,6 +517,68 @@ export function CompareThreeBeaches() {
                     ))}
                 </div>
 
+                {!allSelected ? (
+                    <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                        {/* Preview slot: filled or empty */}
+                        <div className="grid grid-cols-3 divide-x divide-slate-100">
+                            {([beachA, beachB, beachC] as (BeachData | null)[]).map((beach, i) => (
+                                <div key={i} className="relative h-36">
+                                    {beach ? (
+                                        <>
+                                            <img
+                                                src={beach.image}
+                                                alt={beach.name}
+                                                className="absolute inset-0 w-full h-full object-cover"
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/75 to-transparent" />
+                                            <div className="absolute top-2 left-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center shadow">
+                                                <Check className="w-3 h-3 text-white" />
+                                            </div>
+                                            <p className="absolute bottom-2 left-2 right-2 text-white font-black text-[11px] truncate leading-tight">
+                                                {beach.name}
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <div className="h-full flex flex-col items-center justify-center gap-2 bg-slate-50/80">
+                                            <div className="w-10 h-10 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center">
+                                                <MapPin className="w-4 h-4 text-slate-300" />
+                                            </div>
+                                            <span className="text-[10px] text-slate-400 font-semibold">
+                                                Pantai {i + 1}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Progress & message */}
+                        <div className="p-7 flex flex-col items-center gap-3">
+                            <div className="flex items-center gap-2">
+                                {([beachA, beachB, beachC] as (BeachData | null)[]).map((beach, i) => (
+                                    <div
+                                        key={i}
+                                        className={`rounded-full transition-all duration-300 ${
+                                            beach
+                                                ? "w-3 h-3 bg-blue-500"
+                                                : "w-2.5 h-2.5 bg-slate-200"
+                                        }`}
+                                    />
+                                ))}
+                            </div>
+                            <p className="text-slate-700 font-black text-[15px] text-center">
+                                {selectedCount === 0
+                                    ? "Pilih 3 Pantai untuk Dibandingkan"
+                                    : `${selectedCount} dari 3 Pantai Dipilih`}
+                            </p>
+                            <p className="text-slate-400 text-[12px] text-center leading-relaxed max-w-xs">
+                                {selectedCount === 0
+                                    ? "Gunakan dropdown di atas untuk memilih pantai yang ingin kamu bandingkan."
+                                    : `Pilih ${3 - selectedCount} pantai lagi untuk melihat tabel perbandingan lengkap.`}
+                            </p>
+                        </div>
+                    </div>
+                ) : (
                 <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
                     <div className="overflow-x-auto">
                         <div className="min-w-[540px]">
@@ -825,7 +904,9 @@ export function CompareThreeBeaches() {
                         <Verdict beaches={beaches} scores={scores} />
                     </div>
                 </div>
+                )}
 
+                {allSelected && (
                 <div className="flex flex-wrap items-center justify-center gap-5 mt-5 pt-5 border-t border-slate-200/60">
                     <div className="flex items-center gap-2">
                         <span className="text-amber-500 font-black">★</span>
@@ -846,6 +927,7 @@ export function CompareThreeBeaches() {
                         <span className="text-slate-400 text-[10px]">Fasilitas tidak tersedia</span>
                     </div>
                 </div>
+                )}
             </div>
         </section>
     );

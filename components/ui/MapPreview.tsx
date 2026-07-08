@@ -174,7 +174,7 @@ function useBeaches() {
             }
 
             // Mapping ke format Beach
-            const mapped: Beach[] = rawData.map((item: any) => {
+            const mapped: Beach[] = rawData.map((item: any, idx: number) => {
                 const badge = (item.badge || "").toLowerCase();
                 let category: Beach["category"] = "Keluarga";
                 if (badge.includes("resort")) category = "Resort";
@@ -198,7 +198,7 @@ function useBeaches() {
                 const priceType: "free" | "paid" = price.toLowerCase() === "gratis" ? "free" : "paid";
 
                 return {
-                    id: Number(item.id) || 0,
+                    id: idx + 1,
                     name: item.name || "",
                     kecamatan: item.kecamatan || "",
                     latitude: item.koordinat?.lat || 0,
@@ -360,14 +360,19 @@ import "leaflet/dist/leaflet.css";
 // Komponen dinamis
 const MapWithLeaflet = dynamic(
     () =>
-        import("react-leaflet").then(({ MapContainer, TileLayer, Marker, Popup, useMap }) => {
+        Promise.all([import("react-leaflet"), import("leaflet")]).then(
+            ([{ MapContainer, TileLayer, Marker, Popup, useMap }, leafletModule]) => {
+            const L = leafletModule.default;
+
             // Komponen untuk resize
             function MapResize() {
                 const map = useMap();
                 useEffect(() => {
-                    // Tunggu render selesai lalu invalidate size
-                    setTimeout(() => map.invalidateSize(), 200);
-                }, []);
+                    const timer = setTimeout(() => {
+                        if (map) map.invalidateSize();
+                    }, 200);
+                    return () => clearTimeout(timer);
+                }, [map]);
                 return null;
             }
 
@@ -412,7 +417,7 @@ const MapWithLeaflet = dynamic(
                             attribution='&copy; OpenStreetMap contributors'
                         />
                         <MapResize />
-                        {beaches.map((beach) => {
+                        {beaches.map((beach, idx) => {
                             const cat = CATEGORY_CONFIG[beach.category];
                             const isActive = activeId === beach.id;
                             const icon = L.divIcon({
@@ -434,7 +439,7 @@ const MapWithLeaflet = dynamic(
 
                             return (
                                 <Marker
-                                    key={beach.id}
+                                    key={`marker-${beach.id}-${idx}`}
                                     position={[beach.latitude, beach.longitude]}
                                     icon={icon}
                                     eventHandlers={{
@@ -482,8 +487,8 @@ export function MapPreview() {
     }, [beaches, activeId]);
 
     const activeBeach = beaches.find(b => b.id === activeId) ?? beaches[0] ?? null;
-    const centerLat = activeBeach?.latitude ?? 1.045;
-    const centerLng = activeBeach?.longitude ?? 104.045;
+    const centerLat = activeBeach?.latitude || 1.045;
+    const centerLng = activeBeach?.longitude || 104.045;
 
     const handleZoomIn = useCallback(() => setMapZoom(z => Math.min(z + 0.5, 18)), []);
     const handleZoomOut = useCallback(() => setMapZoom(z => Math.max(z - 0.5, 8)), []);

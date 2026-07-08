@@ -69,14 +69,14 @@ export async function GET() {
       const fasilitas: BeachFacility = {
         toilet: fas.has("toilet"),
         mushola: fas.has("mushola"),
-        warungMakan: fas.has("warung_makan") || fas.has("warung makan"),
-        parkirMotor: fas.has("parkir_motor") || fas.has("parkir motor"),
-        parkirMobil: fas.has("parkir_mobil") || fas.has("parkir mobil"),
+        warungMakan: fas.has("warung_makan") || fas.has("warung makan") || fas.has("warungmakan"),
+        parkirMotor: fas.has("parkir_motor") || fas.has("parkir motor") || fas.has("parkirmotor"),
+        parkirMobil: fas.has("parkir_mobil") || fas.has("parkir mobil") || fas.has("parkirmobil"),
         gazebo: fas.has("gazebo"),
-        sewaAlat: fas.has("sewa_alat") || fas.has("sewa alat"),
+        sewaAlat: fas.has("sewa_alat") || fas.has("sewa alat") || fas.has("sewaalat"),
         penginapan: fas.has("penginapan"),
         wifi: fas.has("wifi"),
-        penjagaPantai: fas.has("penjaga_pantai") || fas.has("penjaga pantai"),
+        penjagaPantai: fas.has("penjaga_pantai") || fas.has("penjaga pantai") || fas.has("penjagapantai"),
       };
 
       const suasana_score = Number(row.suasana_score) || 3;

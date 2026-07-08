@@ -8,32 +8,12 @@ import {
     Send,
     MessageCircle,
     Share2,
-    ChevronRight,
     Heart,
     Star,
     ArrowUpRight,
     Anchor,
     Compass,
 } from "lucide-react";
-
-const NAV_COLS = {
-    Panduan: [
-        "Tips Berkunjung",
-        "Peta Wisata",
-        "Transportasi & Akses",
-        "Penginapan Terdekat",
-        "Kuliner Lokal",
-        "Keselamatan Wisata",
-    ],
-    Tentang: [
-        "Tentang BatamPantai",
-        "Tim Kurator",
-        "Blog & Artikel",
-        "Hubungi Kami",
-        "Kebijakan Privasi",
-        "Syarat & Ketentuan",
-    ],
-};
 
 const SOCIALS = [
     {
@@ -116,29 +96,6 @@ function SocialBtn({
     );
 }
 
-function NavCol({ title, links }: { title: string; links: string[] }) {
-    return (
-        <div>
-            <h4 className="text-white font-black text-[13px] mb-5 flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-                {title}
-            </h4>
-            <ul className="space-y-3">
-                {links.map((link) => (
-                    <li key={link}>
-                        <a
-                            href="#"
-                            className="group flex items-center gap-1.5 text-slate-500 hover:text-blue-400 text-[12.5px] transition-colors duration-150 w-fit"
-                        >
-                            <ChevronRight className="w-3 h-3 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-150 flex-shrink-0" />
-                            {link}
-                        </a>
-                    </li>
-                ))}
-            </ul>
-        </div>
-    );
-}
 
 export function Footer() {
     return (
@@ -167,8 +124,8 @@ export function Footer() {
             </div>
 
             <div className="relative max-w-[1320px] mx-auto px-4 sm:px-6 xl:px-8">
-                <div className="py-14 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr] gap-10 lg:gap-8">
-                    <div className="md:col-span-2 lg:col-span-1">
+                <div className="py-14">
+                    <div>
                         <a href="#beranda" className="flex items-center gap-3 mb-6 group w-fit">
                             <div className="relative w-11 h-11 rounded-[14px] bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg shadow-blue-900/60">
                                 <Waves className="w-5 h-5 text-white" strokeWidth={2.5} />
@@ -226,9 +183,6 @@ export function Footer() {
                         </div>
                     </div>
 
-                    {Object.entries(NAV_COLS).map(([title, links]) => (
-                        <NavCol key={title} title={title} links={links} />
-                    ))}
                 </div>
 
                 <Divider />
